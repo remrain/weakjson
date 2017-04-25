@@ -5,7 +5,7 @@
 // Represents JSON data structure using native Go types: booleans, floats,
 // strings, arrays, and maps.
 
-package json
+package weakjson
 
 import (
 	"bytes"
@@ -16,6 +16,7 @@ import (
 	"reflect"
 	"runtime"
 	"strconv"
+	"strings"
 	"unicode"
 	"unicode/utf16"
 	"unicode/utf8"
@@ -837,6 +838,30 @@ func (d *decodeState) literalStore(item []byte, v reflect.Value, fromQuoted bool
 			} else {
 				d.saveError(&UnmarshalTypeError{"bool", v.Type(), int64(d.off)})
 			}
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			if value {
+				v.SetInt(1)
+			} else {
+				v.SetInt(0)
+			}
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+			if value {
+				v.SetUint(1)
+			} else {
+				v.SetUint(0)
+			}
+		case reflect.Float32, reflect.Float64:
+			if value {
+				v.SetFloat(1.)
+			} else {
+				v.SetFloat(0.)
+			}
+		case reflect.String:
+			if value {
+				v.SetString("1")
+			} else {
+				v.SetString("0")
+			}
 		case reflect.Bool:
 			v.SetBool(value)
 		case reflect.Interface:
@@ -873,6 +898,55 @@ func (d *decodeState) literalStore(item []byte, v reflect.Value, fromQuoted bool
 			v.SetBytes(b[:n])
 		case reflect.String:
 			v.SetString(string(s))
+		case reflect.Bool:
+			if string(s) == "" || string(s) == "0" {
+				v.SetBool(false)
+			} else {
+				v.SetBool(true)
+			}
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			s2 := string(s)
+			if strings.Index(s2, ".") >= 0 {
+				f, err := strconv.ParseFloat(s2, 64)
+				if err != nil {
+					d.saveError(&UnmarshalTypeError{"number " + s2, v.Type(), int64(d.off)})
+					break
+				}
+				s2 = strconv.FormatFloat(f, 'f', 0, 64)
+			}
+			n, err := strconv.ParseInt(s2, 10, 64)
+			if err != nil || v.OverflowInt(n) {
+				d.saveError(&UnmarshalTypeError{"number " + s2, v.Type(), int64(d.off)})
+				break
+			}
+			v.SetInt(n)
+
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+			s2 := string(s)
+			if strings.Index(s2, ".") >= 0 {
+				f, err := strconv.ParseFloat(s2, 64)
+				if err != nil {
+					d.saveError(&UnmarshalTypeError{"number " + s2, v.Type(), int64(d.off)})
+					break
+				}
+				s2 = strconv.FormatFloat(f, 'f', 0, 64)
+			}
+			n, err := strconv.ParseUint(s2, 10, 64)
+			if err != nil || v.OverflowUint(n) {
+				d.saveError(&UnmarshalTypeError{"number " + s2, v.Type(), int64(d.off)})
+				break
+			}
+			v.SetUint(n)
+
+		case reflect.Float32, reflect.Float64:
+			s2 := string(s)
+			n, err := strconv.ParseFloat(s2, v.Type().Bits())
+			if err != nil || v.OverflowFloat(n) {
+				d.saveError(&UnmarshalTypeError{"number " + s2, v.Type(), int64(d.off)})
+				break
+			}
+			v.SetFloat(n)
+
 		case reflect.Interface:
 			if v.NumMethod() == 0 {
 				v.Set(reflect.ValueOf(string(s)))
@@ -904,6 +978,14 @@ func (d *decodeState) literalStore(item []byte, v reflect.Value, fromQuoted bool
 			} else {
 				d.error(&UnmarshalTypeError{"number", v.Type(), int64(d.off)})
 			}
+		case reflect.Bool:
+			if s == "0" {
+				v.SetBool(false)
+			} else {
+				v.SetBool(true)
+			}
+		case reflect.String:
+			v.SetString(s)
 		case reflect.Interface:
 			n, err := d.convertNumber(s)
 			if err != nil {
@@ -917,6 +999,14 @@ func (d *decodeState) literalStore(item []byte, v reflect.Value, fromQuoted bool
 			v.Set(reflect.ValueOf(n))
 
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			if strings.Index(s, ".") >= 0 {
+				f, err := strconv.ParseFloat(s, 64)
+				if err != nil {
+					d.saveError(&UnmarshalTypeError{"number " + s, v.Type(), int64(d.off)})
+					break
+				}
+				s = strconv.FormatFloat(f, 'f', 0, 64)
+			}
 			n, err := strconv.ParseInt(s, 10, 64)
 			if err != nil || v.OverflowInt(n) {
 				d.saveError(&UnmarshalTypeError{"number " + s, v.Type(), int64(d.off)})
@@ -925,6 +1015,14 @@ func (d *decodeState) literalStore(item []byte, v reflect.Value, fromQuoted bool
 			v.SetInt(n)
 
 		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+			if strings.Index(s, ".") >= 0 {
+				f, err := strconv.ParseFloat(s, 64)
+				if err != nil {
+					d.saveError(&UnmarshalTypeError{"number " + s, v.Type(), int64(d.off)})
+					break
+				}
+				s = strconv.FormatFloat(f, 'f', 0, 64)
+			}
 			n, err := strconv.ParseUint(s, 10, 64)
 			if err != nil || v.OverflowUint(n) {
 				d.saveError(&UnmarshalTypeError{"number " + s, v.Type(), int64(d.off)})

@@ -1,6 +1,6 @@
-// Copyright 2010 The Go Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
+// Copyright 2017 cy@RemRain.com. All rights reserved.
+// Use of this source code is governed by a Apache
+// License Version 2.0 that can be found in the LICENSE file.
 
 // Package json implements encoding and decoding of JSON as defined in
 // RFC 4627. The mapping between JSON and Go values is described
@@ -8,7 +8,7 @@
 //
 // See "JSON and Go" for an introduction to this package:
 // https://golang.org/doc/articles/json_and_go.html
-package json
+package weakjson
 
 import (
 	"bytes"
