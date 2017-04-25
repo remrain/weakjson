@@ -103,7 +103,7 @@ func main() {
 ```
 
 ## Contact
-RemRain<cy@remrain.com>
+[RemRain](cy@remrain.com)
 
 ## License
 Apache License Version 2
