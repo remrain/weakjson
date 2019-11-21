@@ -906,6 +906,9 @@ func (d *decodeState) literalStore(item []byte, v reflect.Value, fromQuoted bool
 			}
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 			s2 := string(s)
+			if s2 == "" {
+				s2 = "0"
+			}
 			if strings.Index(s2, ".") >= 0 {
 				f, err := strconv.ParseFloat(s2, 64)
 				if err != nil {
@@ -923,6 +926,9 @@ func (d *decodeState) literalStore(item []byte, v reflect.Value, fromQuoted bool
 
 		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
 			s2 := string(s)
+			if s2 == "" {
+				s2 = "0"
+			}
 			if strings.Index(s2, ".") >= 0 {
 				f, err := strconv.ParseFloat(s2, 64)
 				if err != nil {
@@ -940,6 +946,9 @@ func (d *decodeState) literalStore(item []byte, v reflect.Value, fromQuoted bool
 
 		case reflect.Float32, reflect.Float64:
 			s2 := string(s)
+			if s2 == "" {
+				s2 = "0"
+			}
 			n, err := strconv.ParseFloat(s2, v.Type().Bits())
 			if err != nil || v.OverflowFloat(n) {
 				d.saveError(&UnmarshalTypeError{"number " + s2, v.Type(), int64(d.off)})
