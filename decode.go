@@ -76,14 +76,13 @@ import (
 //
 // The JSON null value unmarshals into an interface, map, pointer, or slice
 // by setting that Go value to nil. Because null is often used in JSON to mean
-// ``not present,'' unmarshaling a JSON null into any other Go type has no effect
+// “not present,” unmarshaling a JSON null into any other Go type has no effect
 // on the value and produces no error.
 //
 // When unmarshaling quoted strings, invalid UTF-8 or
 // invalid UTF-16 surrogate pairs are not treated as an error.
 // Instead, they are replaced by the Unicode replacement
 // character U+FFFD.
-//
 func Unmarshal(data []byte, v interface{}) error {
 	// Check for well-formedness.
 	// Avoids filling out half a data structure
@@ -550,8 +549,10 @@ func (d *decodeState) array(v reflect.Value) {
 	}
 }
 
-var nullLiteral = []byte("null")
-var textUnmarshalerType = reflect.TypeOf(new(encoding.TextUnmarshaler)).Elem()
+var (
+	nullLiteral         = []byte("null")
+	textUnmarshalerType = reflect.TypeOf(new(encoding.TextUnmarshaler)).Elem()
+)
 
 // object consumes an object from d.data[d.off-1:], decoding into the value v.
 // the first byte ('{') of the object has been read already.
@@ -783,7 +784,7 @@ var numberType = reflect.TypeOf(Number(""))
 func (d *decodeState) literalStore(item []byte, v reflect.Value, fromQuoted bool) {
 	// Check for unmarshaler.
 	if len(item) == 0 {
-		//Empty string given
+		// Empty string given
 		d.saveError(fmt.Errorf("json: invalid use of ,string struct tag, trying to unmarshal %q into %v", item, v.Type()))
 		return
 	}
@@ -909,7 +910,7 @@ func (d *decodeState) literalStore(item []byte, v reflect.Value, fromQuoted bool
 			if s2 == "" {
 				s2 = "0"
 			}
-			if strings.Index(s2, ".") >= 0 {
+			if strings.Index(s2, ".") >= 0 || strings.Index(s2, "e") >= 0 || strings.Index(s2, "E") >= 0 {
 				f, err := strconv.ParseFloat(s2, 64)
 				if err != nil {
 					d.saveError(&UnmarshalTypeError{"number " + s2, v.Type(), int64(d.off)})
@@ -929,7 +930,7 @@ func (d *decodeState) literalStore(item []byte, v reflect.Value, fromQuoted bool
 			if s2 == "" {
 				s2 = "0"
 			}
-			if strings.Index(s2, ".") >= 0 {
+			if strings.Index(s2, ".") >= 0 || strings.Index(s2, "e") >= 0 || strings.Index(s2, "E") >= 0 {
 				f, err := strconv.ParseFloat(s2, 64)
 				if err != nil {
 					d.saveError(&UnmarshalTypeError{"number " + s2, v.Type(), int64(d.off)})
@@ -1008,7 +1009,7 @@ func (d *decodeState) literalStore(item []byte, v reflect.Value, fromQuoted bool
 			v.Set(reflect.ValueOf(n))
 
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			if strings.Index(s, ".") >= 0 {
+			if strings.Index(s, ".") >= 0 || strings.Index(s, "e") >= 0 || strings.Index(s, "E") >= 0 {
 				f, err := strconv.ParseFloat(s, 64)
 				if err != nil {
 					d.saveError(&UnmarshalTypeError{"number " + s, v.Type(), int64(d.off)})
@@ -1024,7 +1025,7 @@ func (d *decodeState) literalStore(item []byte, v reflect.Value, fromQuoted bool
 			v.SetInt(n)
 
 		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-			if strings.Index(s, ".") >= 0 {
+			if strings.Index(s, ".") >= 0 || strings.Index(s, "e") >= 0 || strings.Index(s, "E") >= 0 {
 				f, err := strconv.ParseFloat(s, 64)
 				if err != nil {
 					d.saveError(&UnmarshalTypeError{"number " + s, v.Type(), int64(d.off)})
@@ -1071,7 +1072,7 @@ func (d *decodeState) valueInterface() interface{} {
 
 // arrayInterface is like array but returns []interface{}.
 func (d *decodeState) arrayInterface() []interface{} {
-	var v = make([]interface{}, 0)
+	v := make([]interface{}, 0)
 	for {
 		// Look ahead for ] - can only happen on first iteration.
 		op := d.scanWhile(scanSkipSpace)
